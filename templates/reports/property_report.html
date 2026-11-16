@@ -1,0 +1,69 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} | LGS CRM</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body { margin:0; background:#f4f7fc; color:#17243a; font-family:Inter,system-ui,sans-serif; }
+        .report-page { width:min(1180px,calc(100% - 36px)); margin:36px auto; }
+        .report-head { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:24px; }
+        .eyebrow { color:#267eff; font-size:12px; font-weight:800; letter-spacing:.15em; }
+        h1 { margin:8px 0; font-size:clamp(26px,4vw,36px); letter-spacing:-.04em; }
+        .report-head p { margin:0; color:#718096; }
+        .back-btn { display:inline-block; padding:11px 15px; border-radius:9px; background:#267eff; color:white; text-decoration:none; font-weight:750; }
+        .report-card { overflow:hidden; background:white; border:1px solid #e7edf4; border-radius:14px; box-shadow:0 6px 22px #17345508; }
+        .report-summary { padding:18px 22px; border-bottom:1px solid #edf0f5; color:#617187; }
+        .report-summary strong { color:#17243a; }
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; min-width:800px; border-collapse:collapse; }
+        th,td { padding:14px 16px; border-bottom:1px solid #edf0f5; text-align:left; vertical-align:middle; }
+        th { background:#f8faff; color:#617187; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
+        tr:last-child td { border-bottom:0; }
+        .house { display:flex; align-items:center; gap:12px; min-width:210px; }
+        .house img { width:72px; height:54px; border-radius:8px; object-fit:cover; background:#e6edf6; }
+        .house-id { display:inline-block; margin-top:4px; color:#267eff; font-size:12px; font-weight:800; }
+        .date-time { color:#41526a; white-space:nowrap; }
+        .empty { padding:46px 20px; text-align:center; color:#718096; }
+        .empty strong { display:block; margin-bottom:8px; color:#17243a; font-size:18px; }
+        @media(max-width:650px) { .report-page{margin:22px auto;width:calc(100% - 26px)} .report-head{align-items:flex-start;flex-direction:column}.back-btn{width:100%;text-align:center;box-sizing:border-box} }
+    </style>
+</head>
+<body>
+<main class="report-page">
+    <header class="report-head">
+        <div>
+            <span class="eyebrow">LGS CAMBODIA · PROPERTY ACTIVITY</span>
+            <h1>{{ title }}</h1>
+            <p>Every house in your portfolio, with its database House ID and the date and time it was added.</p>
+        </div>
+        <a class="back-btn" href="{% url 'property_list' %}">Back to properties</a>
+    </header>
+
+    <section class="report-card">
+        <div class="report-summary">Houses added: <strong>{{ houses|length }}</strong></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>House</th><th>Listing</th><th>Location</th><th>Status</th><th>Added date</th><th>Added time</th></tr></thead>
+                <tbody>
+                    {% for house in houses %}
+                    <tr>
+                        <td><div class="house">{% if house.image %}<img src="{{ house.image.url }}" alt="{{ house.title }}">{% endif %}<div><strong>{{ house.title }}</strong><br><span class="house-id">{{ house.house_id }}</span></div></div></td>
+                        <td>{{ house.get_listing_type_display }} · {{ house.get_property_type_display }}</td>
+                        <td>{{ house.district|default:"-" }}{% if house.city %}, {{ house.city }}{% endif %}</td>
+                        <td>{{ house.get_status_display }}</td>
+                        <td class="date-time">{{ house.created_at|date:"d M Y" }}</td>
+                        <td class="date-time">{{ house.created_at|time:"H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6"><div class="empty"><strong>No houses added yet</strong>When you add a property, it will appear here with its House ID and creation time.</div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

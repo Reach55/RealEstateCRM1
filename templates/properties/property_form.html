@@ -1,0 +1,58 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Property | LGS CRM</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <main class="form-page">
+        <header class="form-header">
+            <div>
+                <span class="eyebrow">LGS CAMBODIA</span>
+                <h1>Property Information</h1>
+                <p>Add or update a sale or rental listing.</p>
+            </div>
+            <a class="back-btn" href="{% url 'property_list' %}">Back to Properties</a>
+        </header>
+
+        {% if form.instance.pk %}
+            <div class="house-id-banner">House ID <strong>{{ form.instance.house_id }}</strong><span>Use this ID to find the house when recording a sale.</span></div>
+        {% else %}
+            <div class="house-id-banner">House ID <span>Generated automatically after you save the property.</span></div>
+        {% endif %}
+
+        <section class="form-card">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="form-grid">
+                    {% for field in form %}
+                        <div class="form-field{% if field.name == 'description' or field.name == 'features' %} full-width{% endif %}{% if field.field.widget.input_type == 'checkbox' %} checkbox-field{% endif %}{% if field.errors %} has-error{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-hidden="true">*</span>{% endif %}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
+                            {% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if form.instance.image %}
+                    <div class="current-photo">
+                        <strong>Current property photo</strong>
+                        <img src="{{ form.instance.image.url }}" class="preview-image" alt="Current photo of {{ form.instance.title }}">
+                    </div>
+                {% endif %}
+
+                <div class="form-actions">
+                    <a class="cancel-btn" href="{% url 'property_list' %}">Cancel</a>
+                    <button class="save-btn" type="submit">Save Property</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
