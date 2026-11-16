@@ -1,0 +1,221 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .customer-type-help { display:block; margin-top:6px; color:#718096; font-size:12px; line-height:1.5; }
+        .requirements-source.is-enhanced { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
+        .requirements-picker { position:relative; width:100%; }
+        .requirements-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:48px; padding:11px 14px; border:1px solid #dce3ed; border-radius:9px; background:#fff; color:#17243a; font:inherit; text-align:left; cursor:pointer; }
+        .requirements-toggle::after { content:"⌄"; margin-left:12px; color:#65758b; font-size:19px; }
+        .requirements-toggle > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .requirements-toggle:focus-visible,.requirements-search:focus { outline:3px solid #267eff22; border-color:#267eff; }
+        .requirements-toggle-count { color:#718096; font-size:13px; }
+        .requirements-panel { position:absolute; z-index:30; top:calc(100% + 6px); left:0; right:0; padding:10px; border:1px solid #dce3ed; border-radius:10px; background:#fff; box-shadow:0 14px 35px #17243a24; }
+        .requirements-panel[hidden] { display:none; }
+        .requirements-search { width:100%; height:42px; padding:0 11px; border:1px solid #dce3ed; border-radius:7px; font:inherit; }
+        .requirements-options { max-height:220px; overflow:auto; margin-top:7px; }
+        .requirements-option { display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:6px; cursor:pointer; }
+        .requirements-option:hover { background:#f3f7ff; }
+        .requirements-option input { width:16px; height:16px; margin:0; accent-color:#267eff; }
+        .requirements-empty { padding:12px 8px; color:#718096; font-size:13px; }
+    </style>
+</head>
+<body>
+
+<div class="form-page">
+
+    <div class="form-header">
+        <div>
+            <span class="eyebrow">REAL ESTATE CRM</span>
+            <h1>{{ title }}</h1>
+            <p>Enter customer information below.</p>
+        </div>
+
+        <a href="{% url 'customer_list' %}" class="back-btn">
+            ← Back to Customers
+        </a>
+    </div>
+
+    <div class="form-card">
+
+        <form method="POST">
+            {% csrf_token %}
+
+            {{ form.non_field_errors }}
+
+            <div class="form-grid">
+                {% for field in form %}
+                    <div class="form-field {% if field.name == 'notes' or field.name == 'requirements' or field.name == 'property_description' or field.name == 'owner_requirements' %}full-width{% endif %}" data-field="{{ field.name }}">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% for error in field.errors %}
+                            <small class="field-error">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'customer_list' %}" class="cancel-btn">
+                    Cancel
+                </a>
+
+                <button type="submit" class="save-btn">
+                    Save Customer
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+(() => {
+  const requirementSelect = document.getElementById('id_requirements');
+  if (requirementSelect) {
+    const picker = document.createElement('div');
+    picker.className = 'requirements-picker';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'requirements-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+
+    const toggleLabel = document.createElement('span');
+    const toggleCount = document.createElement('span');
+    toggleCount.className = 'requirements-toggle-count';
+    toggle.append(toggleLabel, toggleCount);
+
+    const panel = document.createElement('div');
+    panel.className = 'requirements-panel';
+    panel.id = 'id_requirements_panel';
+    panel.hidden = true;
+    toggle.setAttribute('aria-controls', panel.id);
+
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'requirements-search';
+    search.placeholder = 'Search requirements...';
+    search.setAttribute('aria-label', 'Search requirements');
+
+    const optionsList = document.createElement('div');
+    optionsList.className = 'requirements-options';
+    panel.append(search, optionsList);
+
+    const optionRows = Array.from(requirementSelect.options).map(option => {
+      const row = document.createElement('label');
+      row.className = 'requirements-option';
+      row.dataset.search = option.textContent.trim().toLowerCase();
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = option.selected;
+      const text = document.createElement('span');
+      text.textContent = option.textContent.trim();
+      checkbox.addEventListener('change', () => {
+        option.selected = checkbox.checked;
+        requirementSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        updateSelected();
+      });
+      row.append(checkbox, text);
+      optionsList.appendChild(row);
+      return row;
+    });
+
+    const empty = document.createElement('div');
+    empty.className = 'requirements-empty';
+    empty.textContent = 'No requirements match your search.';
+    empty.hidden = true;
+    optionsList.appendChild(empty);
+
+    function updateSelected() {
+      const selected = Array.from(requirementSelect.selectedOptions).map(option => option.textContent.trim());
+      toggleLabel.textContent = selected.length ? selected.join(', ') : 'Select requirements';
+      toggleCount.textContent = selected.length ? `${selected.length} selected` : '';
+    }
+
+    toggle.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      toggle.setAttribute('aria-expanded', String(!panel.hidden));
+      if (!panel.hidden) search.focus();
+    });
+    search.addEventListener('input', () => {
+      const term = search.value.trim().toLowerCase();
+      let visible = 0;
+      optionRows.forEach(row => {
+        row.hidden = !row.dataset.search.includes(term);
+        if (!row.hidden) visible += 1;
+      });
+      empty.hidden = visible > 0;
+    });
+    document.addEventListener('click', event => {
+      if (!picker.contains(event.target)) {
+        panel.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    picker.append(toggle, panel);
+    requirementSelect.insertAdjacentElement('afterend', picker);
+    requirementSelect.classList.add('is-enhanced');
+    updateSelected();
+  }
+
+  const purpose = document.getElementById('id_customer_type');
+  const purposeHelp = document.createElement('small');
+  purposeHelp.className = 'customer-type-help';
+  purpose?.insertAdjacentElement('afterend', purposeHelp);
+  const buyerFields = ['property_type','preferred_location','preferred_city','preferred_commune','minimum_budget','budget','preferred_bedrooms','preferred_bathrooms','requirements'];
+  const ownerFields = ['owner_property_title','property_type','city','district','commune','asking_price','owner_bedrooms','owner_bathrooms','land_size','house_size','furnished_status','property_description','owner_requirements'];
+  const sellerFields = ['price_negotiability','title_type'];
+  const typeDescriptions = {
+    BUYER: 'A client looking to buy a house, condo, shophouse, or another property.',
+    SELLER: 'A property owner who contacted us to sell their property.',
+    RENTER: 'A client looking to rent a house, condo, shophouse, or another property.',
+    RENT_OWNER: 'A property owner who contacted us to find tenants for a property they want to rent out.'
+  };
+  function setFieldLabel(fieldName, text) {
+    const label = document.querySelector(`label[for="id_${fieldName}"]`);
+    if (label) label.textContent = text;
+  }
+  function connectDistrictToPhnomPenh(districtId, cityId) {
+    const district = document.getElementById(districtId);
+    const city = document.getElementById(cityId);
+    if (!district || !city) return;
+    const setPhnomPenh = () => {
+      if (district.value) city.value = 'Phnom Penh';
+    };
+    district.addEventListener('change', setPhnomPenh);
+    setPhnomPenh();
+  }
+  connectDistrictToPhnomPenh('id_preferred_location', 'id_preferred_city');
+  connectDistrictToPhnomPenh('id_district', 'id_city');
+  function update() {
+    const owner = ['SELLER','RENT_OWNER'].includes(purpose?.value);
+    const seller = purpose?.value === 'SELLER';
+    const renter = purpose?.value === 'RENTER';
+    purposeHelp.textContent = typeDescriptions[purpose?.value] || '';
+    setFieldLabel('minimum_budget', renter ? 'Minimum monthly rent ($)' : 'Minimum budget ($)');
+    setFieldLabel('budget', renter ? 'Maximum monthly rent ($)' : 'Maximum budget ($)');
+    setFieldLabel('asking_price', purpose?.value === 'RENT_OWNER' ? 'Monthly rent ($)' : 'Asking sale price ($)');
+    document.querySelectorAll('[data-field]').forEach(el => {
+      const name = el.dataset.field;
+      const visible = name === 'name' || name === 'phone' || name === 'email' || name === 'customer_type' || name === 'assigned_agent' || name === 'notes' || (owner ? ownerFields : buyerFields).includes(name) || (seller && sellerFields.includes(name));
+      el.hidden = !visible;
+    });
+  }
+  purpose?.addEventListener('change', update); update();
+})();
+</script>
+
+</body>
+</html>

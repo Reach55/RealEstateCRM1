@@ -1,0 +1,41 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Delete Customer</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<div class="form-page">
+    <div class="form-card delete-confirmation">
+
+        <h1>Delete Customer?</h1>
+
+        <p>
+            Are you sure you want to delete
+            <strong>{{ customer.name }}</strong>?
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-actions">
+                <a href="{% url 'customer_list' %}" class="cancel-btn">
+                    Cancel
+                </a>
+
+                <button type="submit" class="confirm-delete-btn">
+                    Confirm Delete
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+</body>
+</html>

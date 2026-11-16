@@ -1,0 +1,20 @@
+<div class="property-details">
+    <span>{{ property.bedrooms }} Bedrooms</span>
+    <span>{{ property.bathrooms }} Bathrooms</span>
+    <span>{{ property.area }} m²</span>
+</div>
+
+<p>
+    Swimming Pool:
+    {% if property.swimming_pool %}Yes{% else %}No{% endif %}
+</p>
+
+<p>
+    Parking:
+    {% if property.parking %}Yes{% else %}No{% endif %}
+</p>
+
+<p>
+    Garden:
+    {% if property.garden %}Yes{% else %}No{% endif %}
+</p>
