@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Management</title>
+
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { margin: 0; background: #f4f6fb; color: #222; }
+        .navbar { background: #267eff; color: white; padding: 20px 5%; }
+        .navbar a { color: white; text-decoration: none; margin-right: 20px; }
+        .container { max-width: 1200px; margin: 35px auto; padding: 0 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .btn { display: inline-block; background: #267eff; color: white; padding: 11px 18px; border-radius: 7px; text-decoration: none; border: none; cursor: pointer; }
+        .search { display: flex; gap: 10px; margin: 25px 0; }
+        .search input { flex: 1; min-width: 0; padding: 12px; border: 1px solid #ddd; border-radius: 7px; }
+        .table-box { background: white; border-radius: 12px; padding: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 850px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f5f8ff; color: #267eff; }
+        .status { padding: 6px 10px; border-radius: 20px; font-size: 12px; background: #fff2cc; }
+        .paid { background: #d9f8e5; color: #168447; }
+        .partial { background: #e5efff; color: #267eff; }
+        .actions a { margin-right: 10px; text-decoration: none; }
+        .edit { color: #267eff; }
+        .delete { color: #e04444; }
+        .message { background: #d9f8e5; padding: 12px; margin-bottom: 15px; border-radius: 7px; }
+        @media(max-width: 600px) { .container { margin: 20px auto; } }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <strong>REAL ESTATE CRM</strong>
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% if request.user.role == 'PROPERTY' %}{% url 'property_list' %}{% elif request.user.role == 'ADMIN' %}{% url 'admin_dashboard' %}{% else %}{% url 'agent_dashboard' %}{% endif %}">Dashboard</a>
+    <a href="{% url 'property_list' %}">Properties</a>
+    <a href="{% url 'customer_list' %}">Customers</a>
+    {% if request.user.role == 'PROPERTY' %}<a href="{% url 'agent_report' %}">Reports</a>{% endif %}
+    <a href="{% url 'logout' %}">Sign out</a>
+</nav>
+
+<div class="container">
+
+    <div class="header">
+        <div>
+            <h1>Sales Management</h1>
+            <p>Manage property sales and payments.</p>
+        </div>
+        {% if request.user.role != 'PROPERTY' %}<a href="{% url 'sale_add' %}" class="btn">+ Add Sale</a>{% endif %}
+    </div>
+
+    {% for message in messages %}
+        <div class="message">{{ message }}</div>
+    {% endfor %}
+
+    <form method="GET" class="search">
+        <input type="text" name="search" value="{{ search }}"
+               placeholder="Search House ID, property, customer or phone...">
+        <button class="btn" type="submit">Search</button>
+    </form>
+
+    <div class="table-box">
+        <table>
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Customer</th>
+                    <th>Agent</th>
+                    <th>Selling Price</th>
+                    <th>Sale Date</th>
+                    <th>Payment</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for sale in sales %}
+                <tr>
+                    <td><strong>{{ sale.property.house_id }}</strong><br>{{ sale.property.title }}</td>
+                    <td>{{ sale.customer.name }}</td>
+                    <td>{{ sale.agent.username|default:"Not assigned" }}</td>
+                    <td>${{ sale.selling_price|floatformat:2 }}</td>
+                    <td>{{ sale.sale_date|date:"d M Y" }}</td>
+                    <td>
+                        <span class="status
+                            {% if sale.payment_status == 'PAID' %}paid
+                            {% elif sale.payment_status == 'PARTIAL' %}partial
+                            {% endif %}">
+                            {{ sale.get_payment_status_display }}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        {% if request.user.role != 'PROPERTY' %}<a class="edit" href="{% url 'sale_edit' sale.pk %}">Edit</a>
+                        <a class="delete" href="{% url 'sale_delete' sale.pk %}">Delete</a>{% else %}<span>View only</span>{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:30px;">
+                        No sales records found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</body>
+</html>

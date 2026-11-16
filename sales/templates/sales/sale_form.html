@@ -1,0 +1,128 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} | LGS CRM</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body { background:#f4f7fc; color:#17243a; }
+        .sale-page { width:min(900px, calc(100% - 36px)); margin:36px auto 56px; }
+        .sale-header { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:22px; }
+        .sale-header h1 { margin:8px 0 6px; font-size:clamp(26px, 3vw, 34px); letter-spacing:-.04em; }
+        .sale-header p { color:#718096; }
+        .sale-card { padding:clamp(20px, 3vw, 32px); background:#fff; border:1px solid #e7edf4; border-radius:16px; box-shadow:0 10px 32px rgba(20,40,80,.06); }
+        .sale-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 22px; }
+        .sale-field { display:flex; flex-direction:column; gap:8px; min-width:0; }
+        .sale-field label { color:#334155; font-size:13px; font-weight:700; }
+        .sale-field input,.sale-field select,.sale-field textarea { width:100%; min-height:48px; padding:11px 13px; border:1px solid #dce3ed; border-radius:9px; background:#fff; color:#172033; font:inherit; }
+        .sale-field textarea { min-height:100px; resize:vertical; }
+        .sale-field input:focus,.sale-field select:focus,.sale-field textarea:focus { outline:0; border-color:#267eff; box-shadow:0 0 0 4px #267eff1f; }
+        .sale-help { color:#718096; font-size:12px; line-height:1.45; }
+        .sale-error,.errorlist { color:#c62828; font-size:13px; list-style:none; }
+        .sale-error-box { margin-bottom:18px; padding:13px 15px; border-radius:9px; background:#fff0f0; }
+        .house-preview { display:flex; align-items:center; gap:14px; margin-top:4px; padding:12px; background:#f5f8fd; border:1px solid #e2eaf5; border-radius:10px; }
+        .house-preview[hidden] { display:none; }
+        .house-preview img { flex:0 0 88px; width:88px; height:72px; object-fit:cover; border-radius:7px; background:#e6edf6; }
+        .house-preview-copy { min-width:0; }
+        .house-preview-copy strong { display:block; margin-bottom:4px; }
+        .house-preview-copy span { display:block; color:#64748b; font-size:12px; overflow-wrap:anywhere; }
+        .sale-actions { display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:26px; padding-top:20px; border-top:1px solid #edf0f5; }
+        .sale-actions a,.sale-actions button { min-height:46px; display:inline-flex; align-items:center; justify-content:center; padding:0 18px; border:0; border-radius:9px; text-decoration:none; font-weight:700; cursor:pointer; }
+        .sale-actions a { background:#edf1f6; color:#475569; }
+        .sale-actions button { background:#267eff; color:#fff; }
+        @media(max-width:620px) {
+            .sale-page { width:calc(100% - 24px); margin:20px auto 36px; }
+            .sale-header { align-items:flex-start; flex-direction:column; gap:12px; }
+            .sale-grid { grid-template-columns:1fr; gap:15px; }
+            .sale-actions { display:grid; grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main class="sale-page">
+        <header class="sale-header">
+            <div>
+                <span class="eyebrow">LGS CAMBODIA</span>
+                <h1>{{ title }}</h1>
+                <p>Find the house by its ID, confirm the listing, and record the sale.</p>
+            </div>
+            <a class="back-btn" href="{% url 'sale_list' %}">Back to sales</a>
+        </header>
+
+        <section class="sale-card">
+            <form method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="sale-error-box">{{ form.non_field_errors }}</div>{% endif %}
+                <div class="sale-grid">
+                    {% for field in form %}
+                        <div class="sale-field{% if field.name == 'notes' %} full-width{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-hidden="true">*</span>{% endif %}</label>
+                            {{ field }}
+                            {% if field.name == 'property' %}
+                                <datalist id="house-id-options">
+                                    {% for house in form.available_properties %}
+                                        <option value="{{ house.house_id }}" label="{{ house.house_id }} · {{ house.title }} · {{ house.district }} · ${{ house.price|floatformat:0 }}" data-title="{{ house.title }}" data-location="{{ house.district }}{% if house.city %}, {{ house.city }}{% endif %}" data-price="{{ house.price|floatformat:0 }}"{% if house.image %} data-photo="{{ house.image.url }}"{% endif %}></option>
+                                    {% endfor %}
+                                </datalist>
+                                <div class="house-preview" id="house-preview" hidden aria-live="polite">
+                                    <img id="house-preview-photo" alt="Selected house">
+                                    <div class="house-preview-copy">
+                                        <strong id="house-preview-title"></strong>
+                                        <span id="house-preview-id"></span>
+                                        <span id="house-preview-details"></span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if field.help_text %}<small class="sale-help">{{ field.help_text }}</small>{% endif %}
+                            {% for error in field.errors %}<small class="sale-error">{{ error }}</small>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="sale-actions">
+                    <a href="{% url 'sale_list' %}">Cancel</a>
+                    <button type="submit">Save Sale</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const houseInput = document.getElementById('id_property');
+        const houseOptions = Array.from(document.querySelectorAll('#house-id-options option'));
+        const housePreview = document.getElementById('house-preview');
+        const housePhoto = document.getElementById('house-preview-photo');
+        const houseTitle = document.getElementById('house-preview-title');
+        const houseId = document.getElementById('house-preview-id');
+        const houseDetails = document.getElementById('house-preview-details');
+        const salePrice = document.getElementById('id_selling_price');
+
+        function showSelectedHouse() {
+            const searchId = houseInput.value.trim().toUpperCase();
+            const house = houseOptions.find(option => option.value.toUpperCase() === searchId);
+            if (!house) {
+                housePreview.hidden = true;
+                return;
+            }
+
+            houseTitle.textContent = house.dataset.title;
+            houseId.textContent = house.value;
+            houseDetails.textContent = `${house.dataset.location} · $${house.dataset.price}`;
+            if (house.dataset.photo) {
+                housePhoto.src = house.dataset.photo;
+                housePhoto.hidden = false;
+            } else {
+                housePhoto.removeAttribute('src');
+                housePhoto.hidden = true;
+            }
+            housePreview.hidden = false;
+            if (!salePrice.value) salePrice.value = house.dataset.price;
+        }
+
+        houseInput.addEventListener('input', showSelectedHouse);
+        houseInput.addEventListener('change', showSelectedHouse);
+        showSelectedHouse();
+    </script>
+</body>
+</html>
