@@ -1,0 +1,25 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+<div class="container" style="max-width:650px; margin:40px auto;">
+
+    <h2>User Information</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit"
+                style="background:#267eff;color:white;padding:10px 20px;border:0;border-radius:6px;">
+            Save User
+        </button>
+
+        <a href="{% url 'user_list' %}"
+           style="margin-left:10px;">
+            Cancel
+        </a>
+    </form>
+
+</div>
+{% endblock %}
